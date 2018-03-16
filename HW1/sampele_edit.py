@@ -39,6 +39,7 @@ text.close()
 x = []
 y = []
 
+# TODO : 在這裡用 3-folder看看
 for i in range(12):
     # 一個月取連續10小時的data可以有471筆
     for j in range(471):

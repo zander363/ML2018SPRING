@@ -7,7 +7,9 @@
 # Distributed under terms of the MIT license.
 
 """
-
+this script is use 3 folder to selection training data
+and I choose the twice of three and third of three data
+and it did a great work
 """
 import sys
 import csv 

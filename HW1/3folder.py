@@ -15,6 +15,7 @@ import math
 import random
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 
 data = []    
 #一個維度儲存一種污染物的資訊
@@ -40,7 +41,9 @@ x = []
 y = []
 
 # TODO : 在這裡用 3-folder看看
-for i in range(12):
+# 分成3分
+for i in range(4,8):
+    k=i-4
     # 一個月取連續10小時的data可以有471筆
     for j in range(471):
         x.append([])
@@ -48,8 +51,21 @@ for i in range(12):
         for t in range(18):
             # 連續9小時
             for s in range(9):
-                x[471*i+j].append(data[t][480*i+j+s] )
+                x[471*k+j].append(data[t][480*i+j+s] )
         y.append(data[9][480*i+j+9])
+
+for i in range(8,12):
+    k=i-4
+    # 一個月取連續10小時的data可以有471筆
+    for j in range(471):
+        x.append([])
+        # 總共有18種污染物
+        for t in range(18):
+            # 連續9小時
+            for s in range(9):
+                x[471*k+j].append(data[t][480*i+j+s] )
+        y.append(data[9][480*i+j+9])
+
 x = np.array(x)
 y = np.array(y)
 
@@ -61,11 +77,12 @@ x = np.concatenate((np.ones((x.shape[0],1)),x), axis=1)
 
 w = np.zeros(len(x[0]))         # initial weight vector
 lr =  0.5                       # learning rate
-iter =  1000                      # iteration
+iter =  100000                      # iteration
 
 # use adagrad to got weight
 x_t = x.transpose()
 s_gra = np.zeros(len(x[0]))
+costs = []
 
 for i in range(iter):
     hypo = np.dot(x,w)
@@ -76,7 +93,13 @@ for i in range(iter):
     s_gra += gra**2
     ada = np.sqrt(s_gra)
     w = w - lr * gra/ada
-    print ('iteration: %d | Cost: %f  ' % ( i,cost_a))
+
+    costs.append(cost_a)
+    #print ('iteration: %d | Cost: %f  ' % ( i,cost_a))
+
+print(cost_a)
+plt.plot(costs[3:])
+plt.show()
 
 '''
 # save model

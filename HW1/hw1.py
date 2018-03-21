@@ -17,15 +17,16 @@ import math
 import random
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 
 data = []    
 #一個維度儲存一種污染物的資訊
 for i in range(18):
 	data.append([])
 
+inputs = sys.argv[1]
+
 n_row = 0
-text = open('train.csv', 'r', encoding='big5') 
+text = open(inputs, 'r', encoding='big5') 
 row = csv.reader(text , delimiter=",")
 for r in row:
     # 第0列為header沒有資訊
@@ -42,8 +43,6 @@ text.close()
 x = []
 y = []
 
-# TODO : 在這裡用 3-folder看看
-# 分成3分
 for i in range(4,8):
     k=i-4
     # 一個月取連續10小時的data可以有471筆
@@ -99,9 +98,6 @@ for i in range(iter):
     costs.append(cost_a)
     #print ('iteration: %d | Cost: %f  ' % ( i,cost_a))
 
-print(cost_a)
-plt.plot(costs[3:])
-plt.show()
 
 '''
 # save model
@@ -142,9 +138,8 @@ for i in range(len(test_x)):
     a = np.dot(w,test_x[i])
     ans[i].append(a)
 
-#filename = sys.argv[2]
-filename = 'output.csv'
-text = open(filename, "w+")
+outputs = sys.argv[2]
+text = open(outputs, "w+")
 s = csv.writer(text,delimiter=',',lineterminator='\n')
 s.writerow(["id","value"])
 for i in range(len(ans)):

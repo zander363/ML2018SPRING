@@ -17,7 +17,6 @@ import math
 import random
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 
 data = []    
 #一個維度儲存一種污染物的資訊
@@ -71,7 +70,7 @@ for i in range(8,12):
 x = np.array(x)
 y = np.array(y)
 
-# x = np.concatenate((x,x**2), axis=1)
+x = np.concatenate((x,x[:,5*9:6*9-1]**2), axis=1)
 # 增加平方項
 
 x = np.concatenate((np.ones((x.shape[0],1)),x), axis=1)
@@ -79,7 +78,7 @@ x = np.concatenate((np.ones((x.shape[0],1)),x), axis=1)
 
 w = np.zeros(len(x[0]))         # initial weight vector
 lr =   1                      # learning rate
-iter =  100000                      # iteration
+iter =  1000000                      # iteration
 
 # use adagrad to got weight
 x_t = x.transpose()
@@ -99,9 +98,6 @@ for i in range(iter):
     costs.append(cost_a)
     #print ('iteration: %d | Cost: %f  ' % ( i,cost_a))
 
-print(cost_a)
-plt.plot(costs[3:])
-plt.show()
 
 '''
 # save model
@@ -130,7 +126,7 @@ for r in row:
 text.close()
 test_x = np.array(test_x)
 
-# test_x = np.concatenate((test_x,test_x**2), axis=1)
+test_x = np.concatenate((test_x,test_x[:,5*9:6*9-1]**2), axis=1)
 # 增加平方項
 
 test_x = np.concatenate((np.ones((test_x.shape[0],1)),test_x), axis=1)

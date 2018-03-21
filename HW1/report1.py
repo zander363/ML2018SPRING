@@ -50,10 +50,11 @@ for i in range(4,8):
     for j in range(471):
         x.append([])
         # 總共有18種污染物
-        for t in range(18):
-            # 連續9小時
-            for s in range(9):
-                x[471*k+j].append(data[t][480*i+j+s] )
+        #for t in range(18):
+        t = 9
+        # 連續9小時
+        for s in range(9):
+            x[471*k+j].append(data[t][480*i+j+s] )
         y.append(data[9][480*i+j+9])
 
 for i in range(8,12):
@@ -61,11 +62,13 @@ for i in range(8,12):
     # 一個月取連續10小時的data可以有471筆
     for j in range(471):
         x.append([])
-        # 總共有18種污染物
-        for t in range(18):
-            # 連續9小時
-            for s in range(9):
-                x[471*k+j].append(data[t][480*i+j+s] )
+
+        # for t in range(18):
+        # 僅取PM2.5一個feature
+        t = 9
+        # 連續9小時
+        for s in range(9):
+            x[471*k+j].append(data[t][480*i+j+s] )
         y.append(data[9][480*i+j+9])
 
 x = np.array(x)
@@ -78,7 +81,7 @@ x = np.concatenate((np.ones((x.shape[0],1)),x), axis=1)
 # 增加bias項           
 
 w = np.zeros(len(x[0]))         # initial weight vector
-lr =   1                      # learning rate
+lr =  0.5                       # learning rate
 iter =  100000                      # iteration
 
 # use adagrad to got weight
@@ -116,16 +119,18 @@ text = open('test.csv' ,"r")
 row = csv.reader(text , delimiter= ",")
 
 for r in row:
-    if n_row %18 == 0:
+    if n_row %18 == 9:
         test_x.append([])
         for i in range(2,11):
             test_x[n_row//18].append(float(r[i]) )
     else :
+        '''
         for i in range(2,11):
             if r[i] !="NR":
                 test_x[n_row//18].append(float(r[i]))
             else:
                 test_x[n_row//18].append(0)
+        '''
     n_row = n_row+1
 text.close()
 test_x = np.array(test_x)
@@ -143,7 +148,7 @@ for i in range(len(test_x)):
     ans[i].append(a)
 
 #filename = sys.argv[2]
-filename = 'output.csv'
+filename = 'output_comp1.csv'
 text = open(filename, "w+")
 s = csv.writer(text,delimiter=',',lineterminator='\n')
 s.writerow(["id","value"])

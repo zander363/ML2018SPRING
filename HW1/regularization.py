@@ -17,14 +17,15 @@ import math
 import random
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 
 data = []    
 #一個維度儲存一種污染物的資訊
 for i in range(18):
 	data.append([])
 
+#inputs = sys.argv[1]
 
-'''
 n_row = 0
 text = open("train.csv", 'r', encoding='big5') 
 row = csv.reader(text , delimiter=",")
@@ -84,13 +85,16 @@ iter =  100000                      # iteration
 x_t = x.transpose()
 s_gra = np.zeros(len(x[0]))
 costs = []
+lambda_c = 50 
 
 for i in range(iter):
     hypo = np.dot(x,w)
+    w_a = np.copy(w) # for regularization
+    w_a[-1] = 0
     loss = hypo - y
     cost = np.sum(loss**2) / len(x)
     cost_a  = math.sqrt(cost)
-    gra = np.dot(x_t,loss)
+    gra = np.dot(x_t,loss) + 2*lambda_c*w_a
     s_gra += gra**2
     ada = np.sqrt(s_gra)
     w = w - lr * gra/ada
@@ -98,17 +102,20 @@ for i in range(iter):
     costs.append(cost_a)
     #print ('iteration: %d | Cost: %f  ' % ( i,cost_a))
 
+print(cost_a)
+plt.plot(costs) 
+plt.show()
 
+'''
 # save model
 np.save('model.npy',w)
-'''
 # read model
 w = np.load('model.npy')
+'''
 
-inputs = sys.argv[1]
 test_x = []
 n_row = 0
-text = open(inputs ,"r")
+text = open('test.csv' ,"r")
 row = csv.reader(text , delimiter= ",")
 
 for r in row:
@@ -138,8 +145,8 @@ for i in range(len(test_x)):
     a = np.dot(w,test_x[i])
     ans[i].append(a)
 
-outputs = sys.argv[2]
-text = open(outputs, "w+")
+#outputs = sys.argv[2]
+text = open("output_re.csv", "w+")
 s = csv.writer(text,delimiter=',',lineterminator='\n')
 s.writerow(["id","value"])
 for i in range(len(ans)):

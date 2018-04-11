@@ -14,6 +14,7 @@ from keras.models import Model, loadmodel
 from keras.layers import Input, Dense, Dropout, Flatten, Activation, Reshape
 from keras.layers.convolutional import Conv2D, ZeroPadding2D
 from keras.layers.pooling import MaxPooling2D, AveragePooling2D
+from keras.utils import np_utils
 from keras.optimizers import SGD, Adam, Adadelta
 
 def build_model():

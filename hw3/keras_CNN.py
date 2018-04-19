@@ -6,22 +6,24 @@
 #
 # Distributed under terms of the MIT license.
 
-"""
 
-"""
 import numpy as np
 import pandas as pd
 import sys
+'''
 from keras.models import Sequential, Model
-from keras.models import load_model
 from keras.layers.core import Flatten, Dense, Dropout
-from keras.layers import Input, Dense, Dropout, Activation, Reshape
-from keras.layers.convolutional import ZeroPadding2D, Convolution2D
-from keras.layers.convolutional import Conv2D, ZeroPadding2D
-from keras.layers.pooling import MaxPooling2D, AveragePooling2D
+from keras.layers.convolutional import ZeroPadding2D, MaxPooling2D, Convolution2D,Conv2D
 from keras.layers.normalization import BatchNormalization
-from keras.optimizers import SGD, Adam, Adadelta
+from keras.optimizers import SGD, Adam
 from keras.utils import np_utils
+from keras.models import load_model
+from keras.preprocessing.image import ImageDataGenerator
+import tensorflow as tf
+config = tf.ConfigProto()
+config.gpu_options.allow_growth = True
+sess = tf.Session(config = config)
+'''
 
 
 def load_data(path, label=True):
@@ -51,59 +53,48 @@ def normalize(X_all, X_test):
     # Split to train, test again
     X_all = X_train_test_normed[0:X_all.shape[0]]
     X_test = X_train_test_normed[X_all.shape[0]:]
-    return X_all, X_test
+    return X_all, X_test,mu[X_all.shape[0]:],sigma[X_all.shape[0]:]
 
-def build_model():
+def split_valid_set(X_all, Y_all, percentage):
+    all_data_size = len(X_all)
+    valid_data_size = int(floor(all_data_size * percentage))
 
-    '''
-    #先定義好框架
-    #第一步從input吃起
-    '''
-    input_img = Input(shape=(48, 48, 1))
-    '''
-    先來看一下keras document 的Conv2D
-    keras.layers.Conv2D(filters, kernel_size, strides=(1, 1), 
-        padding='valid', data_format=None, dilation_rate=(1, 1),
-        activation=None, use_bias=True, kernel_initializer='glorot_uniform',
-        bias_initializer='zeros', kernel_regularizer=None,
-        bias_regularizer=None, activity_regularizer=None,
-        kernel_constraint=None, bias_constraint=None)
-    '''
-    block1 = Conv2D(64, (5, 5), padding='valid', activation='relu')(input_img)
-    block1 = ZeroPadding2D(padding=(2, 2), data_format='channels_last')(block1)
-    block1 = MaxPooling2D(pool_size=(5, 5), strides=(2, 2))(block1)
-    block1 = ZeroPadding2D(padding=(1, 1), data_format='channels_last')(block1)
+    X_all, Y_all = _shuffle(X_all, Y_all)
 
-    block2 = Conv2D(64, (3, 3), activation='relu')(block1)
-    block2 = ZeroPadding2D(padding=(1, 1), data_format='channels_last')(block2)
+    X_train, Y_train = X_all[0:valid_data_size], Y_all[0:valid_data_size]
+    X_valid, Y_valid = X_all[valid_data_size:], Y_all[valid_data_size:]
 
-    block3 = Conv2D(64, (3, 3), activation='relu')(block2)
-    block3 = AveragePooling2D(pool_size=(3, 3), strides=(2, 2))(block3)
-    block3 = ZeroPadding2D(padding=(1, 1), data_format='channels_last')(block3)
+    return X_train, Y_train, X_valid, Y_valid
 
-    block4 = Conv2D(128, (3, 3), activation='relu')(block3)
-    block4 = ZeroPadding2D(padding=(1, 1), data_format='channels_last')(block4)
+def build_model(shape):
+    model = Sequential()
 
-    block5 = Conv2D(128, (3, 3), activation='relu')(block4)
-    block5 = ZeroPadding2D(padding=(1, 1), data_format='channels_last')(block5)
-    block5 = AveragePooling2D(pool_size=(3, 3), strides=(2, 2))(block5)
-    block5 = Flatten()(block5)
+    model.add(Convolution2D(32,kernel_size=(3, 3), input_shape=shape, activation= "relu",padding='same',kernel_initializer='glorot_normal'))
+    model.add(Convolution2D(32,kernel_size=(3, 3), activation= "relu",padding='same',kernel_initializer='glorot_normal'))
+    model.add(MaxPooling2D((2,2)))
+    model.add(Dropout(0.1))
+    model.add(BatchNormalization())
 
-    fc1 = Dense(1024, activation='relu')(block5)
-    fc1 = Dropout(0.5)(fc1)
+    model.add(Convolution2D(64,kernel_size=(3, 3), activation= "relu",padding='same',kernel_initializer='glorot_normal'))
+    model.add(Convolution2D(64,kernel_size=(3, 3), activation= "relu",padding='same',kernel_initializer='glorot_normal'))
+    model.add(Convolution2D(64,kernel_size=(3, 3), activation= "relu",padding='same',kernel_initializer='glorot_normal'))
+    model.add(MaxPooling2D((2,2)))
+    model.add(Dropout(0.3))
+    model.add(BatchNormalization())
 
-    fc2 = Dense(1024, activation='relu')(fc1)
-    fc2 = Dropout(0.5)(fc2)
-
-    predict = Dense(7)(fc2)
-    predict = Activation('softmax')(predict)
-    model = Model(inputs=input_img, outputs=predict)
-
-    # opt = SGD(lr=0.1, decay=1e-6, momentum=0.9, nesterov=True)
-    # opt = Adam(lr=1e-3)
-    opt = Adadelta(lr=0.1, rho=0.95, epsilon=1e-08)
-    model.compile(loss='categorical_crossentropy', optimizer=opt, metrics=['accuracy'])
-    model.summary()
+    model.add(Convolution2D(128,kernel_size=(3, 3), activation= "relu",padding='same',kernel_initializer='glorot_normal'))
+    model.add(Convolution2D(128,kernel_size=(3, 3), activation= "relu",padding='same',kernel_initializer='glorot_normal'))
+    model.add(MaxPooling2D((2,2)))
+    model.add(Dropout(0.4))
+    model.add(BatchNormalization())
+    
+    model.add(Flatten())
+    model.add(Dense(1024,activation="relu", kernel_initializer='glorot_normal'))
+    model.add(BatchNormalization())
+    model.add(Dropout(0.5))
+    model.add(Dense(1024,activation="relu", kernel_initializer='glorot_normal'))
+    model.add(Dropout(0.5))
+    model.add(Dense(7,activation="softmax",kernel_initializer='glorot_normal'))
     return model
 
 if __name__ == '__main__':
@@ -111,17 +102,39 @@ if __name__ == '__main__':
     h=48
     X,Y = load_data('train.csv')
     X_test = load_data('test.csv',False)
-    X, X_test = normalize(X,X_test)
+    X, X_test,mu,sigma = normalize(X,X_test)
     X = X.reshape(X.shape[0],h,w,1)
     X_test = X_test.reshape(X_test.shape[0],h,w,1)
-    Y = np_utils.to_categorical(Y,7)
+    #Y = np_utils.to_categorical(Y,7)
+    np.savetxt("mu.csv",mu,delimiter=",")
+    np.savetxt("sigma.csv",sigma,delimiter=",")
+    
 
-    model = build_model()
+  
+    '''
+    model = build_model((h,w,1))
+
+    model.summary()
     #model.compile(loss='categorical_crossentropy',optimizer=SGD(lr=0.5,decay=1e-6,momentum=0.9,nesterov=True),metrics=['accuracy'])
-    '''
-    '''
+    model.compile(loss='categorical_crossentropy',optimizer=Adam(lr=1e-3),metrics=['accuracy'])
 
-    model.fit(X,Y,batch_size = 100,epochs=80, validation_split = 0.1)
+    #model.fit(X,Y,batch_size = 100,epochs=90, validation_split = 0.1)
+    batch_size = 256
+    nb_epoch = 150
+    imageprocess = True
+
+    #print('Using real-time data augmentation.')
+    
+    #should I normalize first? try samplewise norm!
+    datagen = ImageDataGenerator(featurewise_center=False, samplewise_center=False,  
+        featurewise_std_normalization=False, samplewise_std_normalization=False, zca_whitening=False,  
+        rotation_range = 10,width_shift_range=0.1, height_shift_range=0.1, horizontal_flip=True, vertical_flip=False)
+
+    datagen.fit(X)
+
+    history = model.fit_generator(datagen.flow(X, Y, batch_size = 256),
+                        samples_per_epoch = X.shape[0], epochs = 150, steps_per_epoch = len(X))
+                     
     score = model.evaluate(X,Y)
     model.save("model")
     print("\nACC:",score)
@@ -137,3 +150,4 @@ if __name__ == '__main__':
             csvFile.write('\n' + str(x) + ',' + str(output[i]))
             x = x+1
 
+    '''

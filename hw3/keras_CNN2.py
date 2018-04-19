@@ -14,9 +14,14 @@ from keras.models import Sequential, Model
 from keras.layers.core import Flatten, Dense, Dropout
 from keras.layers.convolutional import ZeroPadding2D, MaxPooling2D, Convolution2D,Conv2D
 from keras.layers.normalization import BatchNormalization
-from keras.optimizers import SGD
+from keras.optimizers import SGD, Adam
 from keras.utils import np_utils
 from keras.models import load_model
+from keras.preprocessing.image import ImageDataGenerator
+import tensorflow as tf
+config = tf.ConfigProto()
+config.gpu_options.allow_growth = True
+sess = tf.Session(config = config)
 
 
 def load_data(path, label=True):
@@ -62,25 +67,32 @@ def split_valid_set(X_all, Y_all, percentage):
 def build_model(shape):
     model = Sequential()
 
-    model.add(Convolution2D(64,kernel_size=(3, 3), input_shape=shape, activation= "relu",padding='same'))
-    model.add(Convolution2D(64,kernel_size=(3, 3), activation= "relu",padding='same'))
-    model.add(BatchNormalization())
+    model.add(Convolution2D(32,kernel_size=(3, 3), input_shape=shape, activation= "relu",padding='same',kernel_initializer='glorot_normal'))
+    model.add(Convolution2D(32,kernel_size=(3, 3), activation= "relu",padding='same',kernel_initializer='glorot_normal'))
     model.add(MaxPooling2D((2,2)))
-
-    model.add(Convolution2D(128,kernel_size=(3, 3), activation= "relu",padding='same'))
-    model.add(Convolution2D(128,kernel_size=(3, 3), activation= "relu",padding='same'))
+    model.add(Dropout(0.1))
     model.add(BatchNormalization())
-    model.add(MaxPooling2D((2,2)))
 
+    model.add(Convolution2D(64,kernel_size=(3, 3), activation= "relu",padding='same',kernel_initializer='glorot_normal'))
+    model.add(Convolution2D(64,kernel_size=(3, 3), activation= "relu",padding='same',kernel_initializer='glorot_normal'))
+    model.add(Convolution2D(64,kernel_size=(3, 3), activation= "relu",padding='same',kernel_initializer='glorot_normal'))
+    model.add(MaxPooling2D((2,2)))
+    model.add(Dropout(0.3))
+    model.add(BatchNormalization())
+
+    model.add(Convolution2D(128,kernel_size=(3, 3), activation= "relu",padding='same',kernel_initializer='glorot_normal'))
+    model.add(Convolution2D(128,kernel_size=(3, 3), activation= "relu",padding='same',kernel_initializer='glorot_normal'))
+    model.add(MaxPooling2D((2,2)))
+    model.add(Dropout(0.4))
+    model.add(BatchNormalization())
     
     model.add(Flatten())
-    model.add(Dense(512,activation="relu"))
+    model.add(Dense(1024,activation="relu", kernel_initializer='glorot_normal'))
+    model.add(BatchNormalization())
     model.add(Dropout(0.5))
-    '''
-    model.add(Dense(1024,activation="relu"))
+    model.add(Dense(1024,activation="relu", kernel_initializer='glorot_normal'))
     model.add(Dropout(0.5))
-    '''
-    model.add(Dense(7,activation="softmax"))
+    model.add(Dense(7,activation="softmax",kernel_initializer='glorot_normal'))
     return model
 
 if __name__ == '__main__':
@@ -92,24 +104,54 @@ if __name__ == '__main__':
     X = X.reshape(X.shape[0],h,w,1)
     X_test = X_test.reshape(X_test.shape[0],h,w,1)
     Y = np_utils.to_categorical(Y,7)
-
+    
+  
+    X_train = X
+    y_train = Y
     model = build_model((h,w,1))
 
     model.summary()
     #model.compile(loss='categorical_crossentropy',optimizer=SGD(lr=0.5,decay=1e-6,momentum=0.9,nesterov=True),metrics=['accuracy'])
-    model.compile(loss='categorical_crossentropy',optimizer='adam',metrics=['accuracy'])
+    model.compile(loss='categorical_crossentropy',optimizer=Adam(lr=1e-3),metrics=['accuracy'])
 
-    model.fit(X,Y,batch_size = 100,epochs=50, validation_split = 0.1)
+    #model.fit(X,Y,batch_size = 100,epochs=90, validation_split = 0.1)
+    batch_size = 256
+    nb_epoch = 150
+    imageprocess = True
+
+    print('Using real-time data augmentation.')
+    
+    #should I normalize first? try samplewise norm!
+    datagen = ImageDataGenerator(              #1
+        featurewise_center=False,  
+        samplewise_center=False,  
+        featurewise_std_normalization=False,  
+        samplewise_std_normalization=False,  
+        zca_whitening=False,  
+        rotation_range = 10, 
+        width_shift_range=0.1, 
+        height_shift_range=0.1, 
+        horizontal_flip=True, 
+        vertical_flip=False)
+
+    datagen.fit(X_train)                       
+
+    history = model.fit_generator(datagen.flow(X_train, y_train,    
+                        batch_size  = batch_size),
+                        samples_per_epoch = X_train.shape[0],
+                        epochs = nb_epoch,
+                        steps_per_epoch = len(X_train))
+                     
     score = model.evaluate(X,Y)
     model.save("model")
     print("\nACC:",score)
 
     model = load_model('model')
     model.summary()
-    output = model.predict_classes(X,batch_size=100,verbose=1)
+    output = model.predict_classes(X_test,batch_size=100,verbose=1)
 
     x = 0
-    with open('output','w') as csvFile:
+    with open('output_RB2','w') as csvFile:
         csvFile.write('id,label')
         for i in range(len(output)):
             csvFile.write('\n' + str(x) + ',' + str(output[i]))

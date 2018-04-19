@@ -11,6 +11,9 @@
 """
 import os, sys
 import argparse
+import numpy as np
+import pandas as pd
+from keras.models import load_model
 
 def load_data(path):
     In = pd.read_csv(path, sep=',', header=0)
@@ -24,7 +27,7 @@ def load_data(path):
     return X
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Logistic Regression with Gradient Descent Method')
+    parser = argparse.ArgumentParser(description='CNN test')
     group = parser.add_mutually_exclusive_group()
     parser.add_argument('--test_data_path', type=str,
                         default='test.csv', dest='test',
@@ -40,12 +43,14 @@ if __name__ == '__main__':
     opts = parser.parse_args()
 
 
-    normal = load_normal_param('param')
-    X_test = X_test.reshape(X_test.shape[0],48,48,1)
+    #normal = load_normal_param('param')
     X_test = load_data(opts.test)
     mu = np.genfromtxt('mu.csv',delimiter=',')
     sigma = np.genfromtxt('sigma.csv',delimiter=',')
-    X_test = (X_test - mu) / sigma
+    for i in range(len(X_test)):
+        X_test[i] = (X_test[i] - mu) / sigma
+    #X_test = (X_test - mu) / sigma
+    X_test = X_test.reshape(X_test.shape[0],48,48,1)
     model = load_model('model')
 
     model.summary()
@@ -53,8 +58,8 @@ if __name__ == '__main__':
 
     x = 0
     with open(opts.predict,'w') as csvFile:
-    csvFile.write('id,label')
-    for i in range(len(output)):
-        csvFile.write('\n' + str(x) + ',' + str(output[i]))
-        x = x+1
+        csvFile.write('id,label')
+        for i in range(len(output)):
+            csvFile.write('\n' + str(x) + ',' + str(output[i]))
+            x = x+1
 

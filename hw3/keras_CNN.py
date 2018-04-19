@@ -54,7 +54,7 @@ def normalize(X_all, X_test):
     # Split to train, test again
     X_all = X_train_test_normed[0:X_all.shape[0]]
     X_test = X_train_test_normed[X_all.shape[0]:]
-    return X_all, X_test,mu[X_all.shape[0]:],sigma[X_all.shape[0]:]
+    return X_all, X_test,mu[0:X_all.shape[0]],sigma[0:X_all.shape[0]]
 
 def split_valid_set(X_all, Y_all, percentage):
     all_data_size = len(X_all)
@@ -103,14 +103,13 @@ if __name__ == '__main__':
     h=48
     X,Y = load_data('train.csv')
     X_test = load_data('test.csv',False)
-    #X, X_test,mu,sigma = normalize(X,X_test)
+    X, X_test,mu,sigma = normalize(X,X_test)
     X = X.reshape(X.shape[0],h,w,1)
     X_test = X_test.reshape(X_test.shape[0],h,w,1)
     Y = np_utils.to_categorical(Y,7)
 
-    '''
-    np.savetxt("mu.csv",mu[0],delimiter=",")
-    np.savetxt("sigma.csv",sigma[0],delimiter=",")
+    np.savetxt("mu_train.csv",mu[0],delimiter=",")
+    np.savetxt("sigma_train.csv",sigma[0],delimiter=",")
     '''
 
     model = build_model((h,w,1))
@@ -120,7 +119,6 @@ if __name__ == '__main__':
 
     model.fit(X,Y,batch_size = 100,epochs=50, validation_split = 0.1)
     
-    '''
     datagen = ImageDataGenerator(featurewise_center=False, samplewise_center=False,  
         featurewise_std_normalization=False, samplewise_std_normalization=False, zca_whitening=False,  
         rotation_range = 10,width_shift_range=0.1, height_shift_range=0.1, horizontal_flip=True, vertical_flip=False)
@@ -129,7 +127,6 @@ if __name__ == '__main__':
 
     history = model.fit_generator(datagen.flow(X, Y, batch_size = 256),
                         samples_per_epoch = X.shape[0], epochs = 50, steps_per_epoch = len(X))
-    '''
                      
     score = model.evaluate(X,Y)
     model.save("model")
@@ -146,3 +143,6 @@ if __name__ == '__main__':
             csvFile.write('\n' + str(x) + ',' + str(output[i]))
             x = x+1
 
+    '''
+    '''
+'''

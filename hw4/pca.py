@@ -30,35 +30,36 @@ for name in input_names:
     img = img.flatten()
     X.append(img)
 
+X_flat = np.reshape(X,(415,-1))
 X = np.array(X)
 X_mean = np.mean(X,axis=0)
 
+input_img = io.imread(input_file).flatten()
+input_mean = np.mean(X_flat,axis=0)
+input_center = input_img - input_mean
+
+print("Run the SVD ......")
 U, s, V = np.linalg.svd((X-X_mean).transpose(),full_matrices=False)
 
 Eigen = U[:,:4]
+
 '''
-E0 = U[:,0]
-E1 = U[:,1]
-E2 = U[:,2]
-E3 = U[:,3]
-E0.reshape((600,600,3))
-io.imsave('E0.jpg',E0)
-E1.reshape((600,600,3))
-io.imsave('E1.jpg',E1)
-E2.reshape((600,600,3))
-io.imsave('E2.jpg',E2)
-E3.reshape((600,600,3))
-io.imsave('E3.jpg',E3)
+for i in range(4):
+    E = U[:,i].reshape(600,600,3)
+    E -= np.min(E)
+    E /= np.max(E)
+    E = (E * 255).astype(np.uint8)
+    io.imsave('E'+str(i)+'.jpg',E.reshape((600,600,3)))
+print((s/np.sum(s))[:4])
 '''
-input_img = skimage.io.imread(input_file).flatten()
-input_center = input_file - X_mean
+intput_center = io.imread(input_file).flatten() - input_mean
 
 weight = np.dot(input_center,Eigen)
 
-re = X_mean + np,dot(weight,Eigen.T)
+re = input_mean + np.dot(weight,Eigen.T)
 re -= np.min(re,0)
 re /= np.max(re,0)
 re = (re*255).astype(np.uint8)
 
-
 io.imsave('reconstruction.jpg',re.reshape(600,600,3))
+

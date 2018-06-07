@@ -46,11 +46,13 @@ parser.add_argument('--load_model', default = None)
 parser.add_argument('--save_dir', default = 'model/')
 parser.add_argument('--testing_data', default = 'testing_data.txt')
 parser.add_argument('--predict_file', default = 'output.csv')
+parser.add_argument('--train_path', default = 'training_label.txt')
+parser.add_argument('--semi_path', default = 'training_nolabel.txt')
 args = parser.parse_args()
 
-train_path = 'training_label.txt'
+train_path = args.train_path
 test_path = args.testing_data
-semi_path = 'training_nolabel.txt'
+semi_path = args.semi_path
 output_file = args.predict_file
 
 # build model

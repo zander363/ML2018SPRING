@@ -27,9 +27,9 @@ model = load_model('model')
 prediction = model.predict(X)
 
 x=1
-csvFile = open("output.csv",'w')
+csvFile = open(output,'w')
 csvFile.write('TestDataID,Rating')
 for i in range(len(prediction)):
-    csvFile.write('\n' + str(x) + ' , ' + str(prediction[i]))
+    csvFile.write('\n' + str(x) + ' , ' + str(prediction[i,0]))
     x = x+1
 csvFile.close()
